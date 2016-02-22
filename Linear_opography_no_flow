@@ -1,0 +1,43 @@
+clear all
+figure(1)
+clf
+
+%% initialize
+
+% parameters %
+% parameter values
+%dt = 1; % elevation steps
+%tmax = 1000; % maximum time simulation yrs
+%t = 0:dt:tmax; %time steps
+dx = 1; % meter
+xmax = 2000;
+zmax = 1000;
+x = 0:dx:xmax; %distance steps
+
+% initial topography %
+S = 0.5; % slope of topography
+% initial topography
+z = zmax - S*x;
+
+% mass balance %
+% b--climate govern
+y = 0.01; % m/ur*(1/m), net accumulation gradient
+% fixed zela
+zela = 500; 
+b = y*(z - zela); % accumulation and/or alation, producing into the glaciers
+xb = subplus(b);
+%% run
+
+ztotal = z + xb;
+
+%% plot
+figure(1)
+    plot(x,ztotal,'g--','linewidth',2)
+
+    hold on
+    plot(x,z,'r','linewidth',1)
+    xlabel('distance(m)','fontname','arial','fontsize',21)
+    ylabel('Elevation(m)','fontname','arial','fontsize',21)
+    set(gca,'fontsize',18,'fontname','arial')
+    xlim ([0 2000]);
+    ylim ([0 1000]);

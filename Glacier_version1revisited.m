@@ -1,0 +1,120 @@
+% this code is created to slmulate glacial move
+% this code was written on Feb 19, 2016
+% written by Hang Deng in MATLAB
+% be careful with 1)ELA oscillation; 2) erosional rules; 3) ice discharge
+% with slide rule and deformation velocity inputs.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear all
+figure(1)
+clf
+
+%% initialize
+
+% parameters %
+% parameter values
+A = 2.1e-16; % Pa^-3/yr
+dt = 0.002; % elevation steps
+tmax = 1000; % maximum time simulation yrs
+t = 0:dt:tmax; %time steps
+dx = 100; % meter
+xmax = 28000; %max distance m
+x = 0:dx:xmax; %distance steps
+
+%erosional parameters
+C1 = 0.0012; % m/(Pa*yr) Sliding coefficient
+C2 = 0.0001; % erosion coefficient
+rho1 = 917; % kg/m^3, density of ice
+rhow = 1000; % water density
+g = 9.8; %m/s^2, gravity
+
+% initial topography %
+S = 0.08; % slope of topography
+zmax = 4000; % max elevation m
+
+% consider climate affect ELA 1)harmonical ELA from   
+ELA = 3600; % meter elevation
+E = 40; % half of the amplitude
+pi = 3.14;
+% climate variation of ELA
+zela = ELA + E .* sin(2*pi*t/8);
+
+% steady state ice discharge
+w0 = 1000;
+H = zeros(size(x)); % ice thickness
+erosion = zeros(size(x)); % removed thickness
+%Q = w0.*y.*((zmax-zela).*x-((S.*x.^2)/2)); % Anderson et al, 2006
+%Q(find(Q<0)) = 0; % Q<0 is Q = 0
+
+% initial linear topography
+zb = zmax - S.*x;
+
+
+%z = zb - erosion; % bedrock
+ztotal = zb + H; % elevation of ice surface
+
+nframe = 0; %frame movie
+
+% plotting 
+nplot = 50;
+tplot = tmax/nplot;
+% go to loop for modeling
+
+%% loop
+%for x = 0:dx:xmax
+for i = 1:length(t)
+    % mass balance %
+    % b--climate govern
+    y = 0.01; % m/ur*(1/m), net accumulation gradient
+    b = y.*(ztotal-zela(i)); % accumulation and/or alation, producing into the glaciers
+    %b(find(b<0)) = 0; % below ELA, producing = 0 only flux available
+    
+    Height = H(1:end-1)+0.5*diff(H); % interpolates ice thickness to 
+    % cell edges
+    theta = diff(ztotal)/dx; % slope of ice surface calculated at cell 
+    % edges
+    % non-linear discharge Q flux problem
+    Q = (2*A/5).*((rho1*g*abs(sin(theta))).^3).*(Height.^5); % ice 
+    % discharge due to internal deformation
+    % Q = Usl*H + A+((Pr*g*S)^3)*((H^5)/S);
+    Q =[0 Q 0]; %takes care of boundary conditions - no flux in at top 
+    % and no flux out at bottom
+    dHdt = b - (diff(Q)/dx); % time rate of change of ice thickness 
+    % [m y^-1]
+    
+
+    H = H + (dHdt*dt); % update ice thickness
+    H = max(H,0); % H is >= 0
+    
+    % erosion by glaciers, erosional rate proportional to ice discharge per
+    % unit width Q/W from MacGregor et al 2000, Geology; use costant width w0
+    % will change it later
+    %F1 = w0./(2.*H); % shape factor
+    %tau = F1.*rho1.*g.*H.*0.5; % basal shear stress
+   % Hw = H - 75; % water depth
+   % Ne = rho1.*g.*H - rhow.*g.*Hw; % effective stres
+  %  Us = (C1 .* tau.^2) .* Ne;
+   % erorate = C2.*Us; % meter / yr on bedrock
+     %erorate = 500*(diff(Q)/dx)/w0; 
+
+    %erosional
+    %erosion = erosion + erorate*dt; % yrly erosion    
+    
+    z = zmax - S.*x;% -erosion;
+    ztotal = z+H; %updates surface elevation
+    
+    if rem(t(i),tplot)==0
+        disp(['Time: ' num2str(t(i))]);
+        figure(1)
+        plot(x/1000,ztotal,'r','linewidth',2);
+        hold on
+        plot(x/1000,z,'g--','linewidth',1);
+        xlabel('Distance [km]','Fontsize',12)
+        ylabel('Elevation [m]','Fontsize',12)
+        %xlim([0 8000]);
+       % ylim([0 4500]);
+        %M(:,nframe) = getframe(gcf);
+        pause(0.01)  
+        hold off    
+        
+    end
+end
